@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediGuide - Find Your Doctor</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9faf9;
+            color: #333;
+            text-align: center;
+        }
+
+        /* 1. The Title Section */
+        header {
+            background-color: #007bff; /* Medical Blue */
+            color: white;
+            padding: 40px 0;
+        }
+        h1 { margin: 0; font-size: 2.5rem; }
+        p { margin: 10px 0 0; font-size: 1.1rem; opacity: 0.9; }
+
+        /* 2. The Menu Bar (Subtitle options) */
+        .menu-bar {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .menu-item {
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: #e3f2fd;
+            color: #007bff;
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <!-- Header / Title -->
+    <header>
+        <h1>MediGuide</h1>
+        <p>Your Guide to Better Health</p>
+        <p>Find top rated hospitals and specialists near you!</p>
+    </header>
+
+    <!-- Subtitle / Menu Bar -->
+    <div class="menu-bar">
+        <a href="#" class="menu-item">Hospitals</a>
+    </div>
+
+        <!-- Location loading -->
+            <p id="resultText">Loading location...</p>
+
+    </div>
+
+</body>
+</html>

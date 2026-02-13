@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediGuide - Find Your Doctor</title>
+
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9faf9;
+            color: #333;
+            text-align: center;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 40px 0;
+        }
+
+        h1 { margin: 0; font-size: 2.5rem; }
+        p { margin: 10px 0 0; font-size: 1.1rem; opacity: 0.9; }
+
+        .menu-bar {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .menu-item {
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: #e3f2fd;
+            color: #007bff;
+        }
+
+        #locationBox {
+            margin-top: 40px;
+            font-size: 1.2rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            margin-top: 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>MediGuide</h1>
+        <p>Your Guide to Better Health</p>
+        <p>Find top rated hospitals and specialists near you!</p>
+    </header>
+
+    <!-- Menu -->
+    <div class="menu-bar">
+        <a href="#" class="menu-item">Hospitals</a>
+    </div>
+
+    <!-- Location Section -->
+    <div id="locationBox">
+        <p id="resultText">Click below to detect your location</p>
+        <button onclick="getLocation()">Detect My Location</button>
+    </div>
+
+    <!-- JavaScript -->
+   <script>
+    function getLocation() {
+        const resultText = document.getElementById("resultText");
+
+        if (navigator.geolocation) {
+            resultText.innerText = "Fetching your location...";
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // 🔹 Reverse Geocoding API
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const place = data.address.city 
+                                || data.address.town 
+                                || data.address.village 
+                                || data.address.state 
+                                || "Location found";
+
+                            resultText.innerHTML = `📍 You are in <b>${place}</b>`;
+                        })
+                        .catch(() => {
+                            resultText.innerText = "Location detected, but place name not found.";
+                        });
+                },
+                function(error) {
+                    resultText.innerText = "❌ Location access denied or unavailable.";
+                }
+            );
+        } else {
+            resultText.innerText = "Geolocation is not supported by this browser.";
+        }
+    }
+</script>
+
+
+</body>
+</html>

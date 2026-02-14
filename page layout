@@ -1,0 +1,333 @@
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+
+interface HospitalDetail {
+  name: string;
+  formatted_address: string;
+  rating?: number;
+  user_ratings_total?: number;
+  formatted_phone_number?: string;
+  website?: string;
+  url?: string;
+  opening_hours?: {
+    open_now: boolean;
+    weekday_text?: string[];
+  };
+}
+
+function HospitalContent() {
+  const params = useParams();
+  const placeId = params?.id as string;
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const department = searchParams.get("department") || "";
+
+  const [hospital, setHospital] = useState<HospitalDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!placeId) return;
+
+    const fetchDetails = async () => {
+      try {
+        const res = await fetch(`/api/hospital-details?placeId=${placeId}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+
+        const data = await res.json();
+        if (!data.result) throw new Error("No data");
+
+        setHospital(data.result);
+      } catch {
+        setError("Failed to load hospital details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [placeId]);
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 16,
+            padding: "60px 0",
+          }}
+        >
+          <div className="spinner spinner-lg" />
+          <p style={{ color: "var(--text-secondary)" }}>
+            Loading hospital details...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !hospital) {
+    return (
+      <div className="page-container">
+        <div className="page-content" style={{ textAlign: "center", paddingTop: 60 }}>
+          <p style={{ fontSize: "2rem", marginBottom: 12 }}>😔</p>
+          <p style={{ color: "var(--text-secondary)" }}>
+            {error || "Hospital not found."}
+          </p>
+          <button className="btn btn-ghost" onClick={() => router.back()} style={{ marginTop: 16 }}>
+            ← Go back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-container animate-in">
+      <div className="page-content-wide">
+        {/* Back link */}
+        <a
+          href="#"
+          className="back-link"
+          onClick={(e) => {
+            e.preventDefault();
+            router.back();
+          }}
+        >
+          ← Back to results
+        </a>
+
+        {/* Header Card */}
+        <div className="card" style={{ padding: 28, marginBottom: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <h1
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: "var(--text)",
+                  margin: "0 0 8px",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {hospital.name}
+              </h1>
+              {department && (
+                <span className="badge badge-primary">{department}</span>
+              )}
+            </div>
+
+            {hospital.rating && (
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div className="rating" style={{ fontSize: "1.25rem" }}>
+                  ⭐ {hospital.rating}
+                </div>
+                {hospital.user_ratings_total && (
+                  <span
+                    style={{
+                      color: "var(--text-muted)",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    {hospital.user_ratings_total} reviews
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Info rows */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              marginTop: 16,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ fontSize: "1.125rem", flexShrink: 0, marginTop: 1 }}>📍</span>
+              <span
+                style={{
+                  color: "var(--text-secondary)",
+                  fontSize: "0.938rem",
+                  lineHeight: 1.5,
+                }}
+              >
+                {hospital.formatted_address}
+              </span>
+            </div>
+
+            {hospital.formatted_phone_number && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "1.125rem", flexShrink: 0 }}>📞</span>
+                <a
+                  href={`tel:${hospital.formatted_phone_number}`}
+                  style={{
+                    color: "var(--primary)",
+                    fontSize: "0.938rem",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  {hospital.formatted_phone_number}
+                </a>
+              </div>
+            )}
+
+            {hospital.website && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "1.125rem", flexShrink: 0 }}>🌐</span>
+                <a
+                  href={hospital.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "var(--primary)",
+                    fontSize: "0.938rem",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Visit Website →
+                </a>
+              </div>
+            )}
+
+            {hospital.opening_hours && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "1.125rem", flexShrink: 0 }}>🕒</span>
+                <span
+                  className={`badge ${hospital.opening_hours.open_now ? "badge-success" : "badge-warning"}`}
+                >
+                  {hospital.opening_hours.open_now
+                    ? "Currently Open"
+                    : "Currently Closed"}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Opening Hours */}
+        {hospital.opening_hours?.weekday_text && (
+          <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+            <h2
+              style={{
+                fontSize: "1rem",
+                fontWeight: 600,
+                color: "var(--text)",
+                margin: "0 0 14px",
+              }}
+            >
+              Opening Hours
+            </h2>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {hospital.opening_hours.weekday_text.map((line, i) => {
+                const [day, ...timeParts] = line.split(": ");
+                const time = timeParts.join(": ");
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "0.875rem",
+                      padding: "4px 0",
+                      borderBottom:
+                        i < hospital.opening_hours!.weekday_text!.length - 1
+                          ? "1px solid var(--border)"
+                          : "none",
+                    }}
+                  >
+                    <span style={{ color: "var(--text)", fontWeight: 500 }}>
+                      {day}
+                    </span>
+                    <span style={{ color: "var(--text-secondary)" }}>
+                      {time}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Map */}
+        <div
+          className="card"
+          style={{ overflow: "hidden", marginBottom: 16 }}
+        >
+          <iframe
+            width="100%"
+            height="350"
+            loading="lazy"
+            allowFullScreen
+            style={{ border: "none", display: "block" }}
+            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=place_id:${placeId}`}
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+          {hospital.url && (
+            <a
+              href={hospital.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{ flex: 1, textDecoration: "none", textAlign: "center" }}
+            >
+              Open in Google Maps
+            </a>
+          )}
+          {hospital.formatted_phone_number && (
+            <a
+              href={`tel:${hospital.formatted_phone_number}`}
+              className="btn btn-secondary"
+              style={{ flex: 1, textDecoration: "none", textAlign: "center" }}
+            >
+              📞 Call Now
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function HospitalDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-container">
+          <div className="spinner spinner-lg" />
+        </div>
+      }
+    >
+      <HospitalContent />
+    </Suspense>
+  );
+}

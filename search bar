@@ -1,0 +1,232 @@
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+
+interface Hospital {
+  place_id: string;
+  name: string;
+  vicinity: string;
+  rating?: number;
+  user_ratings_total?: number;
+  opening_hours?: { open_now: boolean };
+}
+
+function SearchContent() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const lat = params.get("lat");
+  const lng = params.get("lng");
+  const department = params.get("department") || "General Medicine";
+  const keywords = params.get("keywords") || "hospital";
+
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+
+    fetch(
+      `/api/hospitals?lat=${lat}&lng=${lng}&keyword=${encodeURIComponent(keywords)}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setHospitals(data.results || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [lat, lng, keywords]);
+
+  return (
+    <div className="page-container animate-in">
+      <div className="page-content-wide">
+        {/* Back link */}
+        <a
+          href="/location"
+          className="back-link"
+          onClick={(e) => {
+            e.preventDefault();
+            router.back();
+          }}
+        >
+          ← Change location
+        </a>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              color: "var(--text)",
+              margin: "0 0 8px",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Nearby Hospitals
+          </h1>
+          <span className="badge badge-primary">🏥 {department}</span>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
+              padding: "60px 0",
+            }}
+          >
+            <div className="spinner spinner-lg" />
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.938rem" }}>
+              Searching for hospitals...
+            </p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && hospitals.length === 0 && (
+          <div
+            className="card"
+            style={{ padding: 40, textAlign: "center" }}
+          >
+            <p
+              style={{
+                fontSize: "2rem",
+                margin: "0 0 12px",
+              }}
+            >
+              😔
+            </p>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: "0.938rem",
+                margin: 0,
+              }}
+            >
+              No hospitals found nearby. Try a different location.
+            </p>
+          </div>
+        )}
+
+        {/* Hospital list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {hospitals.map((h) => (
+            <Link
+              key={h.place_id}
+              href={`/hospitals/${h.place_id}?department=${encodeURIComponent(department)}`}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <div className="card card-interactive" style={{ padding: 20 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <h2
+                      style={{
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        margin: "0 0 6px",
+                      }}
+                    >
+                      {h.name}
+                    </h2>
+                    <p
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.875rem",
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {h.vicinity}
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      textAlign: "right",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {h.rating && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span className="rating" style={{ fontSize: "0.938rem" }}>
+                          ⭐ {h.rating}
+                        </span>
+                        {h.user_ratings_total && (
+                          <span
+                            style={{
+                              color: "var(--text-muted)",
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            ({h.user_ratings_total})
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {h.opening_hours && (
+                      <span
+                        className={`badge ${h.opening_hours.open_now ? "badge-success" : "badge-warning"}`}
+                        style={{ fontSize: "0.75rem", padding: "3px 10px" }}
+                      >
+                        {h.opening_hours.open_now ? "Open" : "Closed"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Results count */}
+        {!loading && hospitals.length > 0 && (
+          <p
+            style={{
+              textAlign: "center",
+              color: "var(--text-muted)",
+              fontSize: "0.813rem",
+              marginTop: 20,
+            }}
+          >
+            Showing {hospitals.length} hospitals
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-container">
+          <div className="spinner spinner-lg" />
+        </div>
+      }
+    >
+      <SearchContent />
+    </Suspense>
+  );
+}

@@ -1,0 +1,193 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function Home() {
+  const router = useRouter();
+  const [symptoms, setSymptoms] = useState("");
+  const [age, setAge] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleAnalyze = async () => {
+    if (!symptoms.trim()) {
+      setError("Please describe your symptoms.");
+      return;
+    }
+    if (!age || isNaN(Number(age)) || Number(age) <= 0) {
+      setError("Please enter a valid age.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/analyze-symptoms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms: symptoms.trim(), age: Number(age) }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Analysis failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      const params = new URLSearchParams({
+        department: data.department,
+        keywords: data.keywords,
+        advice: data.advice || "",
+      });
+
+      router.push(`/location?${params.toString()}`);
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page-container animate-in">
+      <div className="page-content">
+        {/* Logo & Header */}
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #0d9488, #06b6d4)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+              fontSize: 28,
+            }}
+          >
+            🏥
+          </div>
+          <h1
+            style={{
+              fontSize: "1.75rem",
+              fontWeight: 700,
+              color: "var(--text)",
+              letterSpacing: "-0.03em",
+              margin: "0 0 8px",
+            }}
+          >
+            MediRecommend
+          </h1>
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.938rem",
+              margin: 0,
+            }}
+          >
+            Describe your symptoms and we&apos;ll find the right hospital for
+            you
+          </p>
+        </div>
+
+        {/* Form Card */}
+        <div className="card" style={{ padding: 28 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              color: "var(--text)",
+              marginBottom: 8,
+            }}
+          >
+            What are your symptoms?
+          </label>
+          <textarea
+            className="textarea"
+            rows={4}
+            placeholder="e.g. I've been having persistent chest pain and shortness of breath for the past 2 days..."
+            value={symptoms}
+            onChange={(e) => setSymptoms(e.target.value)}
+          />
+
+          <div style={{ marginTop: 20 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                color: "var(--text)",
+                marginBottom: 8,
+              }}
+            >
+              Your age
+            </label>
+            <input
+              type="number"
+              className="input"
+              placeholder="Enter your age"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              min={1}
+              max={120}
+              style={{ maxWidth: 200 }}
+            />
+          </div>
+
+          {error && (
+            <p
+              style={{
+                color: "#dc2626",
+                fontSize: "0.875rem",
+                marginTop: 16,
+                marginBottom: 0,
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            className="btn btn-primary"
+            onClick={handleAnalyze}
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 24,
+              padding: "14px 24px",
+              fontSize: "1rem",
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? (
+              <>
+                <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                Analyzing...
+              </>
+            ) : (
+              "Analyze Symptoms"
+            )}
+          </button>
+        </div>
+
+        {/* Footer hint */}
+        <p
+          style={{
+            textAlign: "center",
+            color: "var(--text-muted)",
+            fontSize: "0.813rem",
+            marginTop: 24,
+          }}
+        >
+          Powered by AI · Results are suggestions, not medical advice
+        </p>
+      </div>
+    </div>
+  );
+}

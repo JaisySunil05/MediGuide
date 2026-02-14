@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+    const keyword = searchParams.get("keyword") || "hospital";
+
+    if (!lat || !lng) {
+      return NextResponse.json({ results: [] });
+    }
+
+    const url =
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
+      `?location=${lat},${lng}` +
+      `&radius=10000` +
+      `&type=hospital` +
+      `&keyword=${encodeURIComponent(keyword)}` +
+      `&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ results: [] });
+  }
+}
